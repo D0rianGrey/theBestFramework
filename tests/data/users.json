@@ -1,0 +1,29 @@
+{
+    "users": [
+        {
+            "role": "admin",
+            "username": "admin@example.com",
+            "password": "admin123",
+            "permissions": [
+                "read",
+                "write",
+                "delete"
+            ]
+        },
+        {
+            "role": "user",
+            "username": "user@example.com",
+            "password": "user123",
+            "permissions": [
+                "read"
+            ]
+        }
+    ],
+    "products": [
+        {
+            "id": "prod-1",
+            "name": "Product 1",
+            "price": 19.99
+        }
+    ]
+}
