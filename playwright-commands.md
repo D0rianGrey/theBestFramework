@@ -233,3 +233,48 @@ npx playwright test --reporter=html,json --video=retain-on-failure --screenshot=
 - `--workers=1` полезно для отладки race conditions
 - `--max-failures=1` останавливает выполнение после первой ошибки
 - Используйте переменные окружения для разных сред (dev, staging, prod)
+
+## 🌐 Запуск тестов на удаленном сервере
+
+```bash
+# Запуск тестов на удаленном сервере через SSH
+./run-remote-docker.sh
+
+# Запуск с указанием конкретного хоста
+REMOTE_HOST="user@server.com" ./run-remote-docker.sh
+
+# Запуск с указанием пути к SSH-ключу
+REMOTE_HOST="user@server.com" SSH_KEY="~/.ssh/custom_key" ./run-remote-docker.sh
+
+# Запуск с указанием базового URL
+REMOTE_HOST="user@server.com" BASE_URL_UI_TESTING="https://staging.example.com" ./run-remote-docker.sh
+```
+
+## 🔄 Шардирование тестов (распределение между несколькими машинами)
+
+```bash
+# Запуск первого шарда из четырех
+npx playwright test --shard=1/4
+
+# Запуск второго шарда из четырех
+npx playwright test --shard=2/4
+
+# Запуск с шардированием и отчетом в формате blob
+npx playwright test --shard=1/3 --reporter=blob
+
+# Объединение отчетов из разных шардов
+npx playwright merge-reports --reporter html ./all-blob-reports
+```
+
+## 🐳 Запуск в Docker
+
+```bash
+# Сборка Docker образа
+docker build -t playwright-tests .
+
+# Запуск тестов в Docker
+docker run --rm -v "$(pwd)/playwright-report:/app/playwright-report" playwright-tests
+
+# Запуск с переменными окружения
+docker run --rm -e BASE_URL_UI_TESTING="https://example.com" -v "$(pwd)/playwright-report:/app/playwright-report" playwright-tests
+```
