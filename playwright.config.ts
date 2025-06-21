@@ -32,7 +32,7 @@ export default defineConfig({
     trace: 'on-first-retry',
 
     /* Run tests in headless mode */
-    headless: process.env.CI ? true : false,
+    headless: process.env.CI || isRunningInContainer() ? true : false,
   },
 
   /* Configure projects for major browsers */
@@ -42,11 +42,17 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     }
   ],
-
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
 });
+
+// Функция для определения запуска в контейнере
+function isRunningInContainer() {
+  try {
+    // В большинстве контейнеров существует файл /.dockerenv
+    return require('fs').existsSync('/.dockerenv') ||
+      // Альтернативная проверка через cgroup
+      require('fs').readFileSync('/proc/1/cgroup', 'utf8').includes('docker') ||
+      process.env.CONTAINER === 'true';
+  } catch (e) {
+    return false;
+  }
+}

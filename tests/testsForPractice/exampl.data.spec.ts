@@ -2,17 +2,17 @@ import { test, expect } from '../fixtures/fixtures';
 import testData from '../data/users.json'
 import fs from 'fs';
 
-test('fixture', async ({ testUsers, testProducts }) => {
+test('test with using fixture', async ({ testUsers, testProducts }) => {
     console.log(testUsers.admin.username);
     console.log(testProducts.product1.name);
 });
 
-test('json', async ({ testUsers }, testInfo) => {
+test('test with using json', async ({ testUsers }, testInfo) => {
     const user = testData.users.find(user => user.role === 'admin');
     console.log(user);
 });
 
-test('fs', async ({ testUsers }, testInfo) => {
+test('test with using fs', async ({ testUsers }, testInfo) => {
 
     // save
     testInfo.annotations.push({ type: 'generated-id', description: 'user-123' });
