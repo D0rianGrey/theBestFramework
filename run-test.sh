@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Создание директорий для отчетов, если они не существуют
+mkdir -p playwright-report
+mkdir -p test-results
+
 # Сборка образа
 podman build -t playwright-tests .
 
