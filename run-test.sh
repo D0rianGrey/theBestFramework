@@ -1,8 +1,15 @@
 #!/bin/bash
 
-# Создание директорий для отчетов, если они не существуют
-mkdir -p playwright-report
-mkdir -p test-results
+# Проверка и создание директорий для отчетов
+if [ ! -d "playwright-report" ]; then
+  echo "Создание директории playwright-report..."
+  mkdir -p playwright-report
+fi
+
+if [ ! -d "test-results" ]; then
+  echo "Создание директории test-results..."
+  mkdir -p test-results
+fi
 
 # Сборка образа
 podman build -t playwright-tests .
