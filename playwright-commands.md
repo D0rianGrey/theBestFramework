@@ -236,6 +236,7 @@ npx playwright test --reporter=html,json --video=retain-on-failure --screenshot=
 
 ## 🌐 Запуск тестов на удаленном сервере
 
+### Linux/macOS (SSH)
 ```bash
 # Запуск тестов на удаленном сервере через SSH
 ./run-remote-docker.sh
@@ -248,6 +249,45 @@ REMOTE_HOST="user@server.com" SSH_KEY="~/.ssh/custom_key" ./run-remote-docker.sh
 
 # Запуск с указанием базового URL
 REMOTE_HOST="user@server.com" BASE_URL_UI_TESTING="https://staging.example.com" ./run-remote-docker.sh
+```
+
+### Windows (PowerShell Remoting)
+```powershell
+# Запуск тестов на удаленном Windows сервере через PowerShell Remoting
+.\runTests\run-remote-windows.ps1
+
+# Запуск с параметрами
+.\runTests\run-remote-windows.ps1 -RemoteHost "192.168.1.100" -Username "Administrator" -BaseUrl "https://staging.example.com"
+
+# Настройка PowerShell Remoting на удаленном сервере (выполнить один раз)
+# На удаленном сервере:
+Enable-PSRemoting -Force
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value "*" -Force
+
+# Настройка WinRM для HTTP (если нужно)
+winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+```
+
+### Mac/Linux → Windows (SSH)
+```bash
+# Запуск тестов на Windows сервере с Mac/Linux через SSH
+./runTests/run-remote-windows-from-mac.sh
+
+# Запуск с параметрами
+REMOTE_HOST="192.168.1.100" USERNAME="yevhenii" BASE_URL_UI_TESTING="https://staging.example.com" ./runTests/run-remote-windows-from-mac.sh
+
+# Простая версия (более совместимая)
+./runTests/run-remote-windows-simple.sh
+
+# Базовая версия (для проблемных систем)
+./runTests/run-remote-windows-basic.sh
+
+# Настройка OpenSSH на Windows сервере (выполнить один раз)
+# На Windows сервере в PowerShell от администратора:
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+Start-Service sshd
+Set-Service -Name sshd -StartupType 'Automatic'
+New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
 ```
 
 ## 🔄 Шардирование тестов (распределение между несколькими машинами)
@@ -266,8 +306,9 @@ npx playwright test --shard=1/3 --reporter=blob
 npx playwright merge-reports --reporter html ./all-blob-reports
 ```
 
-## 🐳 Запуск в Docker
+## 🐳 Запуск в Docker/Podman
 
+### Linux/macOS
 ```bash
 # Сборка Docker образа
 docker build -t playwright-tests .
@@ -277,4 +318,175 @@ docker run --rm -v "$(pwd)/playwright-report:/app/playwright-report" playwright-
 
 # Запуск с переменными окружения
 docker run --rm -e BASE_URL_UI_TESTING="https://example.com" -v "$(pwd)/playwright-report:/app/playwright-report" playwright-tests
+
+# Запуск с Podman (Linux)
+./run-test.sh
 ```
+
+### Windows
+```powershell
+# PowerShell - сборка образа
+podman build -t playwright-tests .
+
+# PowerShell - запуск тестов
+podman run --rm `
+    -e BASE_URL_UI_TESTING="https://example.com" `
+    -v "${PWD}\playwright-report:/app/playwright-report" `
+    -v "${PWD}\test-results:/app/test-results" `
+    playwright-tests
+
+# Запуск готовых скриптов
+.\runTests\run-test.ps1      # PowerShell скрипт
+.\runTests\run-test.bat      # Batch файл
+.\runTests\run-test.sh       # Bash скрипт (если есть WSL/Git Bash)
+```
+
+```cmd
+REM CMD - сборка образа
+podman build -t playwright-tests .
+
+REM CMD - запуск тестов
+podman run --rm ^
+    -e BASE_URL_UI_TESTING=https://example.com ^
+    -v "%CD%\playwright-report:/app/playwright-report" ^
+    -v "%CD%\test-results:/app/test-results" ^
+    playwright-tests
+```
+
+## 📁 Доступные скрипты в директории runTests/
+
+### Локальный запуск
+```bash
+./runTests/run-test.sh       # Bash скрипт для Linux/macOS/WSL
+./runTests/run-test.ps1      # PowerShell скрипт для Windows
+./runTests/run-test.bat      # Batch файл для Windows CMD
+```
+
+### Удаленный запуск на Linux/macOS сервере
+```bash
+./run-remote-docker.sh                        # SSH + Docker/Podman на Linux/macOS
+./runTests/run-remote-linux-universal.sh      # Универсальный (Linux/WSL)
+./runTests/run-remote-wsl-as-linux.sh         # WSL как Linux сервер
+```
+
+### Диагностика и проверка
+```bash
+./runTests/check-wsl-remote.sh                # Диагностика WSL на удаленном сервере
+```
+
+### Удаленный запуск на Windows сервере
+```bash
+# С Mac/Linux на Windows сервер (Podman)
+./runTests/run-remote-windows-from-mac.sh    # Полнофункциональная версия
+./runTests/run-remote-windows-simple.sh      # Упрощенная версия
+./runTests/run-remote-windows-basic.sh       # Базовая версия (для проблемных систем)
+
+# С Mac/Linux на Windows сервер (Docker в WSL)
+./runTests/run-remote-wsl-docker.sh          # Docker в WSL (полная версия)
+./runTests/run-remote-wsl-docker-simple.sh   # Docker в WSL (упрощенная версия)
+
+# С Windows на Windows сервер
+./runTests/run-remote-windows.ps1            # PowerShell Remoting
+```
+
+### Выбор скрипта для удаленного Windows:
+
+#### Podman на Windows:
+- **run-remote-windows-from-mac.sh** - если на сервере есть PowerShell и все работает
+- **run-remote-windows-simple.sh** - если есть проблемы с PowerShell
+- **run-remote-windows-basic.sh** - если ничего не работает (использует только базовые команды)
+
+#### Docker в WSL:
+- **run-remote-wsl-as-linux.sh** - WSL как Linux сервер (РЕКОМЕНДУЕТСЯ)
+- **run-remote-linux-universal.sh** - универсальный Linux/WSL скрипт
+- **run-remote-wsl-docker.sh** - полная версия с детальным контролем
+- **run-remote-wsl-docker-simple.sh** - упрощенная версия с архивами
+
+### Требования для удаленного запуска на Windows:
+
+#### Для Podman:
+1. **OpenSSH Server** установлен и запущен
+2. **Podman** установлен и доступен в PATH
+3. **Доступ по SSH** с ключом или паролем
+
+#### Для Docker в WSL:
+1. **OpenSSH Server** установлен и запущен на Windows
+2. **WSL** установлен и настроен
+3. **Docker** установлен в WSL дистрибутиве
+4. **Docker daemon** запущен в WSL
+5. **Доступ по SSH** с ключом или паролем
+
+### Примеры использования:
+```bash
+# Диагностика WSL (если есть проблемы)
+./runTests/check-wsl-remote.sh
+
+# WSL как Linux сервер (РЕКОМЕНДУЕТСЯ для WSL)
+./runTests/run-remote-wsl-as-linux.sh
+REMOTE_HOST="yevhenii@192.168.195.211" ./runTests/run-remote-wsl-as-linux.sh
+
+# Универсальный Linux/WSL
+./runTests/run-remote-linux-universal.sh
+CONTAINER_ENGINE="docker" REMOTE_HOST="yevhenii@192.168.195.211" ./runTests/run-remote-linux-universal.sh
+
+# Podman на Windows
+./runTests/run-remote-windows-basic.sh
+REMOTE_HOST="192.168.195.211" USERNAME="yevhenii" ./runTests/run-remote-windows-basic.sh
+
+# Docker в WSL (сложный способ)
+./runTests/run-remote-wsl-docker-simple.sh
+WSL_DISTRO="Ubuntu" REMOTE_HOST="192.168.195.211" ./runTests/run-remote-wsl-docker.sh
+
+# Локальный запуск на Windows
+.\runTests\run-test.ps1
+
+# Удаленный запуск через PowerShell Remoting
+.\runTests\run-remote-windows.ps1 -RemoteHost "192.168.1.100" -Username "Administrator"
+```
+
+### Настройка Docker в WSL на Windows сервере:
+```bash
+# На Windows сервере в PowerShell от администратора:
+# 1. Установка WSL
+wsl --install
+
+# 2. Установка Ubuntu (или другого дистрибутива)
+wsl --install -d Ubuntu
+
+# 3. В WSL установка Docker
+wsl -d Ubuntu
+sudo apt update
+sudo apt install docker.io
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker $USER
+
+# 4. Запуск Docker daemon при старте WSL
+echo 'sudo service docker start' >> ~/.bashrc
+```
+
+## 🎯 Быстрый старт для WSL
+
+### Если у вас Windows с WSL:
+```bash
+# 1. Проверьте WSL на удаленном сервере
+./runTests/check-wsl-remote.sh
+
+# 2. Если WSL настроен, используйте простой подход
+./runTests/run-remote-wsl-as-linux.sh
+
+# 3. Если нужна универсальность (Linux + WSL)
+./runTests/run-remote-linux-universal.sh
+```
+
+### Если WSL не настроен:
+```bash
+# Используйте Podman на Windows
+./runTests/run-remote-windows-basic.sh
+```
+
+### Приоритет выбора скриптов:
+1. **WSL как Linux** → `run-remote-wsl-as-linux.sh` (самый простой)
+2. **Универсальный** → `run-remote-linux-universal.sh` (Linux + WSL)
+3. **Podman Windows** → `run-remote-windows-basic.sh` (если нет WSL)
+4. **Сложные WSL** → `run-remote-wsl-docker.sh` (только если нужен контроль)
